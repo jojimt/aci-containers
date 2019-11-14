@@ -681,14 +681,14 @@ func CreateEPG(name, uri string) *gbpBaseMo {
 
 // Initializes the Mo DB
 func (s *Server) InitDB() {
-	if s.config.Apic != nil {
-		var err error
-		log1 := log.New()
-		apicCon, err = apicapi.New(log1, s.config.Apic.Hosts, s.config.Apic.Username, s.config.Apic.Password, nil, nil, "test", 60, 5)
-		if err != nil {
-			log.Fatalf("Connecting to APIC: %v", err)
-		}
-	}
+//	if s.config.Apic != nil {
+//		var err error
+//		log1 := log.New()
+//		apicCon, err = apicapi.New(log1, s.config.Apic.Hosts, s.config.Apic.Username, s.config.Apic.Password, nil, nil, "test", 60, 5)
+//		if err != nil {
+//			log.Fatalf("Connecting to APIC: %v", err)
+//		}
+//	}
 
 	theServer = s
 	s.policyDB = make(map[string]*gbpBaseMo)

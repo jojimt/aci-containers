@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
@@ -75,6 +76,8 @@ func (pc *podIFCache) Init() error {
 					break
 				}
 
+				log.Errorf("Create podif marker - %v, will retry", err)
+				time.Sleep(retryTime)
 				continue
 			}
 
@@ -82,6 +85,7 @@ func (pc *podIFCache) Init() error {
 			podif.Status.ContainerID = pc.markerID
 			_, err = pc.crdClient.PodIFs("kube-system").Update(podif)
 			if err == nil {
+				log.Errorf("Update podif marker - %v, will retry", err)
 				pc.state = syncSent
 				break
 			}

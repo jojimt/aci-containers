@@ -30,6 +30,7 @@ import (
 
 const (
 	inboxSize = 256
+	retryTime = 2*time.Second
 )
 
 type KafkaClient struct {
@@ -102,12 +103,21 @@ func InitKafkaClient(cfg *KafkaCfg, ci *CloudInfo) (*KafkaClient, error) {
 		return nil, errors.Wrap(err, "cniCache.Init()")
 	}
 
-	err = c.kafkaSetup()
-	if err != nil {
-		return nil, errors.Wrap(err, "kafkaSetup()")
-	}
+	go func() {
+		for {
+			err = c.kafkaSetup()
+			if err != nil {
+				log.Errorf("kafkaSetup(): %v -- will retry", err)
+				time.Sleep(retryTime)
+				continue
+			}
 
-	go c.run()
+			break
+		}
+
+		log.Infof("kafkaSetup succeeded, running...")
+		c.run()
+	}()
 
 	return c, nil
 }
@@ -119,6 +129,7 @@ func (kc *KafkaClient) AddEP(ep *v1.PodIFStatus) error {
 		IPAddr:   ep.IPAddr,
 		EpgDN:    ep.EPG, // fixme
 		SubnetDN: kc.cloudInfo.Subnet,
+		ContainerID: ep.ContainerID,
 		//PodDN: tbd,
 		ClusterName: kc.cloudInfo.ClusterName,
 	}
@@ -179,6 +190,7 @@ func newTLSConfig(clientCertFile, clientKeyFile, caCertFile string) (*tls.Config
 
 func (kc *KafkaClient) kafkaSetup() error {
 
+	log.Infof("cfg is: %+v", kc.cfg)
 	producerConfig := sarama.NewConfig()
 	if kc.cfg.ClientKeyPath != "" {
 		tlsConfig, err := newTLSConfig(kc.cfg.ClientCertPath,
@@ -190,7 +202,7 @@ func (kc *KafkaClient) kafkaSetup() error {
 		}
 
 		// This can be used on test server if domain does not match cert:
-		//tlsConfig.InsecureSkipVerify = true
+		tlsConfig.InsecureSkipVerify = true
 
 		producerConfig.Net.TLS.Enable = true
 		producerConfig.Net.TLS.Config = tlsConfig
@@ -204,6 +216,7 @@ func (kc *KafkaClient) kafkaSetup() error {
 	}
 
 	producerConfig.Producer.Flush.Messages = kc.cfg.BatchSize
+	producerConfig.Producer.Return.Successes = true
 
 	p, err := sarama.NewSyncProducer(kc.cfg.Brokers, producerConfig)
 	if err != nil {
