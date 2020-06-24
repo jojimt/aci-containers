@@ -93,6 +93,9 @@ if [[ ! -z "$VTEP_IFACE" && ! -z "$VTEP_IP_CIDR" ]]; then
     #FNAME=${UUID}.ep
     FNAME=veth_host_ac.ep
 
+if [[ ! -z "$AUXILIARY_IP" ]]; then
+  VTEP_IP_CIDR="$VTEP_IP_CIDR\",\"$AUXILIARY_IP"
+fi
 cat <<EOF > ${VARDIR}/lib/opflex-agent-ovs/endpoints/${FNAME}
 {
   "uuid": "$UUID",
