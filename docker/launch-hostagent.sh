@@ -48,7 +48,9 @@ else
     echo "running in on prem mode"
 fi
 
+if [ -z "$SNOOP_ONLY" ]; then
 ${ACIBIN}/enable-droplog.sh
+fi
 
 CMD=${HOSTAGENT}
 if [ -f ${HOSTAGENT_CONF} ]; then

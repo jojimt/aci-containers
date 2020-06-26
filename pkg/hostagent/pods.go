@@ -425,6 +425,7 @@ func (agent *HostAgent) podUpdated(obj interface{}) {
 	agent.rcPods.UpdatePodNoCallback(obj.(*v1.Pod))
 	agent.netPolPods.UpdatePodNoCallback(obj.(*v1.Pod))
 	agent.handleObjectUpdateForSnat(obj)
+	agent.snoopContainerIfaces(obj.(*v1.Pod))
 	agent.podChangedLocked(obj)
 }
 
