@@ -126,6 +126,7 @@ func (agent *HostAgent) nodeChanged(obj interface{}) {
 				agent.vtepIP = a.Address
 				agent.log.Infof("vtepIP: %s", agent.vtepIP)
 				gotVtep = true
+				agent.scheduleSyncIPAMMeta()
 			}
 		}
 	}

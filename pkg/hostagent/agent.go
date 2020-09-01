@@ -185,6 +185,7 @@ func NewHostAgent(config *HostAgentConfig, env Environment, log *logrus.Logger) 
 		"snat":          ha.syncSnat,
 		"snatnodeInfo":  ha.syncSnatNodeInfo,
 		"rdconfig":      ha.syncRdConfig,
+		"ipamMeta":      ha.syncIPAMMeta,
 		"snatLocalInfo": ha.UpdateLocalInfoCr}
 
 	if ha.config.EPRegistry == "k8s" {
@@ -305,6 +306,10 @@ func (agent *HostAgent) scheduleSyncRdConfig() {
 }
 func (agent *HostAgent) scheduleSyncLocalInfo() {
 	agent.ScheduleSync("snatLocalInfo")
+}
+
+func (agent *HostAgent) scheduleSyncIPAMMeta() {
+	agent.ScheduleSync("ipamMeta")
 }
 
 func (agent *HostAgent) runTickers(stopCh <-chan struct{}) {

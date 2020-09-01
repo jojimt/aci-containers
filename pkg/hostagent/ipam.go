@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"path/filepath"
 
 	cnitypes "github.com/containernetworking/cni/pkg/types"
 	"github.com/sirupsen/logrus"
@@ -100,6 +101,7 @@ func (agent *HostAgent) updateIpamAnnotation(newPodNetAnnotation string) {
 	}
 
 	agent.rebuildIpam()
+	agent.scheduleSyncIPAMMeta()
 }
 
 func convertRoutes(routes []route) (cniroutes []*cnitypes.Route) {
@@ -225,4 +227,29 @@ func (agent *HostAgent) deallocateMdIps(md *metadata.ContainerMetadata) {
 			}).Debug("Returned IP to pool")
 		}
 	}
+}
+
+func (agent *HostAgent) syncIPAMMeta() bool {
+	if !agent.syncEnabled {
+		return false
+	}
+	agent.ipamMutex.Lock()
+	netAnnot := agent.podNetAnnotation
+	vtepIP := agent.vtepIP
+	defer agent.ipamMutex.Unlock()
+	if vtepIP == "" || netAnnot == "" {
+		agent.log.Debugf("SyncIPAMMeta vtepIP: %s netAnnot: %s", vtepIP, netAnnot)
+		return false
+	}
+
+	ipRanges := &metadata.NetIps{}
+	err := json.Unmarshal([]byte(netAnnot), ipRanges)
+	if err != nil {
+		agent.log.Error("Could not parse pod network annotation", err)
+		return false
+	}
+
+	fp := filepath.Join(agent.config.OpFlexEndpointDir, agent.config.NodeName+".ipamconfig")
+	err = metadata.WriteIPAMMetaData(fp, agent.vtepIP, ipRanges)
+	return err != nil
 }
